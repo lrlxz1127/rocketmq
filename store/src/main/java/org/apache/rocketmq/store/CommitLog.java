@@ -549,6 +549,7 @@ public class CommitLog {
 				}
 
 				topic = ScheduleMessageService.SCHEDULE_TOPIC;
+				// 队列从 0 开始，延迟级别从 1开始
 				queueId = ScheduleMessageService.delayLevel2QueueId(msg.getDelayTimeLevel());
 
 				// Backup real topic, queueId 备份实际的topic和队列id
@@ -635,7 +636,7 @@ public class CommitLog {
 		// Statistics
 		storeStatsService.getSinglePutMessageTopicTimesTotal(msg.getTopic()).incrementAndGet();
 		storeStatsService.getSinglePutMessageTopicSizeTotal(topic).addAndGet(result.getWroteBytes());
-		
+
 		// 处理刷MappedFile的磁盘
 		handleDiskFlush(result, putMessageResult, msg);
 		// 对msg处理HA

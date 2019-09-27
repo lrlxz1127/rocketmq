@@ -135,8 +135,10 @@ public class DefaultMessageStore implements MessageStore {
 		} else {
 			this.haService = null;
 		}
+		// 消息分发服务
 		this.reputMessageService = new ReputMessageService();
 
+		// 延迟消息服务
 		this.scheduleMessageService = new ScheduleMessageService(this);
 
 		this.transientStorePool = new TransientStorePool(messageStoreConfig);
@@ -149,6 +151,7 @@ public class DefaultMessageStore implements MessageStore {
 
 		this.indexService.start();
 
+		// 消息分发服务
 		this.dispatcherList = new LinkedList<>();
 		this.dispatcherList.addLast(new CommitLogDispatcherBuildConsumeQueue());
 		this.dispatcherList.addLast(new CommitLogDispatcherBuildIndex());
