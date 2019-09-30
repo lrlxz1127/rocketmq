@@ -263,7 +263,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 			return;
 		}
 
-		if (!this.consumeOrderly) {
+		if (!this.consumeOrderly) {// 并发消费
 			if (processQueue.getMaxSpan() > this.defaultMQPushConsumer.getConsumeConcurrentlyMaxSpan()) {
 				this.executePullRequestLater(pullRequest, PULL_TIME_DELAY_MILLS_WHEN_FLOW_CONTROL);
 				if ((queueMaxSpanFlowControlTimes++ % 1000) == 0) {
@@ -274,7 +274,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 				}
 				return;
 			}
-		} else {
+		} else {// 顺序消费
 			if (processQueue.isLocked()) {
 				if (!pullRequest.isLockedFirst()) {
 					final long offset = this.rebalanceImpl.computePullFromWhere(pullRequest.getMessageQueue());

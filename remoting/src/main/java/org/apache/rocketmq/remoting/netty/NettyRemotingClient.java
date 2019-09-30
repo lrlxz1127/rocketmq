@@ -419,6 +419,7 @@ public class NettyRemotingClient extends NettyRemotingAbstract implements Remoti
         final List<String> addrList = this.namesrvAddrList.get();
         if (this.lockNamesrvChannel.tryLock(LOCK_TIMEOUT_MILLIS, TimeUnit.MILLISECONDS)) {
             try {
+            	// 再次判断是否已经选择了 nameSrv
                 addr = this.namesrvAddrChoosed.get();
                 if (addr != null) {
                     ChannelWrapper cw = this.channelTables.get(addr);

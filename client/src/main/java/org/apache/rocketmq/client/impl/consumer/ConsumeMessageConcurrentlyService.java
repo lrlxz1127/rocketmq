@@ -387,6 +387,7 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             ConsumeConcurrentlyStatus status = null;
             defaultMQPushConsumerImpl.resetRetryAndNamespace(msgs, defaultMQPushConsumer.getConsumerGroup());
 
+            // ******执行hook********
             ConsumeMessageContext consumeMessageContext = null;
             if (ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 consumeMessageContext = new ConsumeMessageContext();
@@ -408,6 +409,8 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                         MessageAccessor.setConsumeStartTimeStamp(msg, String.valueOf(System.currentTimeMillis()));
                     }
                 }
+                
+                // ******执行业务逻辑********
                 status = listener.consumeMessage(Collections.unmodifiableList(msgs), context);
             } catch (Throwable e) {
                 log.warn("consumeMessage exception: {} Group: {} Msgs: {} MQ: {}",
@@ -417,7 +420,10 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                     messageQueue);
                 hasException = true;
             }
+            // 记录消费时间
             long consumeRT = System.currentTimeMillis() - beginTimestamp;
+            
+            // 状态转换
             if (null == status) {
                 if (hasException) {
                     returnType = ConsumeReturnType.EXCEPTION;
@@ -431,7 +437,6 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
             } else if (ConsumeConcurrentlyStatus.CONSUME_SUCCESS == status) {
                 returnType = ConsumeReturnType.SUCCESS;
             }
-
             if (ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 consumeMessageContext.getProps().put(MixAll.CONSUME_CONTEXT_TYPE, returnType.name());
             }
@@ -444,15 +449,18 @@ public class ConsumeMessageConcurrentlyService implements ConsumeMessageService 
                 status = ConsumeConcurrentlyStatus.RECONSUME_LATER;
             }
 
+            // ******执行hook********
             if (ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.hasHook()) {
                 consumeMessageContext.setStatus(status.toString());
                 consumeMessageContext.setSuccess(ConsumeConcurrentlyStatus.CONSUME_SUCCESS == status);
                 ConsumeMessageConcurrentlyService.this.defaultMQPushConsumerImpl.executeHookAfter(consumeMessageContext);
             }
 
+            // 记录消费状态数据
             ConsumeMessageConcurrentlyService.this.getConsumerStatsManager()
                 .incConsumeRT(ConsumeMessageConcurrentlyService.this.consumerGroup, messageQueue.getTopic(), consumeRT);
 
+            // 如果消费之后的步骤（状态数据记录，队列快照消息清除）
             if (!processQueue.isDropped()) {
                 ConsumeMessageConcurrentlyService.this.processConsumeResult(status, context, this);
             } else {
