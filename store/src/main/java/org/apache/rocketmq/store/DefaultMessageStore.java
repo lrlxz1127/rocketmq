@@ -721,11 +721,13 @@ public class DefaultMessageStore implements MessageStore {
 	}
 
 	public MessageExt lookMessageByOffset(long commitLogOffset) {
+		// 获取该消息的尺寸大小（消息size占：4字节）
 		SelectMappedBufferResult sbr = this.commitLog.getMessage(commitLogOffset, 4);
 		if (null != sbr) {
 			try {
 				// 1 TOTALSIZE
 				int size = sbr.getByteBuffer().getInt();
+				// 根据偏移量和消息size获取完成的消息
 				return lookMessageByOffset(commitLogOffset, size);
 			} finally {
 				sbr.release();
@@ -1500,10 +1502,13 @@ public class DefaultMessageStore implements MessageStore {
 		public void dispatch(DispatchRequest request) {
 			final int tranType = MessageSysFlag.getTransactionValue(request.getSysFlag());
 			switch (tranType) {
+			// 没有事物的消息和事物提交的消息，才分发到ConsumeQueue队列
 			case MessageSysFlag.TRANSACTION_NOT_TYPE:
 			case MessageSysFlag.TRANSACTION_COMMIT_TYPE:
 				DefaultMessageStore.this.putMessagePositionInfo(request);
 				break;
+
+			// 事物预处理消息和事物回滚消息不处理
 			case MessageSysFlag.TRANSACTION_PREPARED_TYPE:
 			case MessageSysFlag.TRANSACTION_ROLLBACK_TYPE:
 				break;
