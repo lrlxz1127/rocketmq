@@ -315,6 +315,7 @@ public class BrokerController {
 				}
 			}, initialDelay, period, TimeUnit.MILLISECONDS);
 
+			// 定时将消费进度刷入磁盘
 			this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 				@Override
 				public void run() {

@@ -412,6 +412,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 			}
 		};
 
+		// broker是否能提交消费进度的flag。clustering模式支持，broadcast模式不支持
 		boolean commitOffsetEnable = false;
 		long commitOffsetValue = 0L;
 		if (MessageModel.CLUSTERING == this.defaultMQPushConsumer.getMessageModel()) {
@@ -426,6 +427,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 		boolean classFilter = false;
 		SubscriptionData sd = this.rebalanceImpl.getSubscriptionInner().get(pullRequest.getMessageQueue().getTopic());
 		if (sd != null) {
+			// 每次请求是否要更新点阅关系。默认false
 			if (this.defaultMQPushConsumer.isPostSubscriptionWhenPull() && !sd.isClassFilterMode()) {
 				subExpression = sd.getSubString();
 			}
@@ -433,6 +435,7 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 			classFilter = sd.isClassFilterMode();
 		}
 
+		// 位置标记
 		int sysFlag = PullSysFlag.buildSysFlag(commitOffsetEnable, // commitOffset
 				true, // suspend
 				subExpression != null, // subscription
@@ -598,11 +601,11 @@ public class DefaultMQPushConsumerImpl implements MQConsumerInner {
 				this.offsetStore = this.defaultMQPushConsumer.getOffsetStore();
 			} else {
 				switch (this.defaultMQPushConsumer.getMessageModel()) {
-				case BROADCASTING:
+				case BROADCASTING:// 广播模式本地，消费进度记录在本地
 					this.offsetStore = new LocalFileOffsetStore(this.mQClientFactory,
 							this.defaultMQPushConsumer.getConsumerGroup());
 					break;
-				case CLUSTERING:
+				case CLUSTERING:// 集群模式远端，消费进度记录在远端
 					this.offsetStore = new RemoteBrokerOffsetStore(this.mQClientFactory,
 							this.defaultMQPushConsumer.getConsumerGroup());
 					break;

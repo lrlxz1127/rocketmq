@@ -501,6 +501,19 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 		this.mqFaultStrategy.updateFaultItem(brokerName, currentLatency, isolation);
 	}
 
+	/**
+	 * 内部包含重试机制
+	 * 
+	 * @param msg
+	 * @param communicationMode
+	 * @param sendCallback
+	 * @param timeout
+	 * @return
+	 * @throws MQClientException
+	 * @throws RemotingException
+	 * @throws MQBrokerException
+	 * @throws InterruptedException
+	 */
 	private SendResult sendDefaultImpl(Message msg, final CommunicationMode communicationMode,
 			final SendCallback sendCallback, final long timeout)
 			throws MQClientException, RemotingException, MQBrokerException, InterruptedException {
@@ -522,7 +535,7 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 					: 1;
 			int times = 0;
 			String[] brokersSent = new String[timesTotal];
-			for (; times < timesTotal; times++) {
+			for (; times < timesTotal; times++) {// 重试：可以解决broker异常掉线的问题
 				String lastBrokerName = null == mq ? null : mq.getBrokerName();
 				MessageQueue mqSelected = this.selectOneMessageQueue(topicPublishInfo, lastBrokerName);
 				if (mqSelected != null) {
@@ -1049,6 +1062,21 @@ public class DefaultMQProducerImpl implements MQProducerInner {
 		return this.sendSelectImpl(msg, selector, arg, CommunicationMode.SYNC, null, timeout);
 	}
 
+	/**
+	 * select 是不会重试的，这也为了顺序消费，牺牲了重试机制
+	 * 
+	 * @param msg
+	 * @param selector
+	 * @param arg
+	 * @param communicationMode
+	 * @param sendCallback
+	 * @param timeout
+	 * @return
+	 * @throws MQClientException
+	 * @throws RemotingException
+	 * @throws MQBrokerException
+	 * @throws InterruptedException
+	 */
 	private SendResult sendSelectImpl(Message msg, MessageQueueSelector selector, Object arg,
 			final CommunicationMode communicationMode, final SendCallback sendCallback, final long timeout)
 			throws MQClientException, RemotingException, MQBrokerException, InterruptedException {

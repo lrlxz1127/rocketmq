@@ -311,7 +311,7 @@ public class MQClientInstance {
 			}
 		}, 1000, this.clientConfig.getHeartbeatBrokerInterval(), TimeUnit.MILLISECONDS);
 
-		// 持久化所有的消费者位移（集群模式保存在broker中，广播模式保存在本地）
+		// 持久化所有的消费者位移（集群模式保存在broker中，广播模式保存在本地） 10s
 		this.scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 
 			@Override
@@ -663,7 +663,7 @@ public class MQClientInstance {
 								this.brokerAddrTable.put(bd.getBrokerName(), bd.getBrokerAddrs());
 							}
 
-							// Update Pub info
+							// Update Pub info 更新生产者路由列表
 							{
 								TopicPublishInfo publishInfo = topicRouteData2TopicPublishInfo(topic, topicRouteData);
 								publishInfo.setHaveTopicRouterInfo(true);
@@ -677,7 +677,7 @@ public class MQClientInstance {
 								}
 							}
 
-							// Update sub info
+							// Update sub info 更新订阅者路由列表
 							{
 								Set<MessageQueue> subscribeInfo = topicRouteData2TopicSubscribeInfo(topic,
 										topicRouteData);

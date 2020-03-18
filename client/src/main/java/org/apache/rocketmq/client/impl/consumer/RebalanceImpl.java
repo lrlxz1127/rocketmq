@@ -372,7 +372,7 @@ public abstract class RebalanceImpl {
 				}
 
 				this.removeDirtyOffset(mq);
-				ProcessQueue pq = new ProcessQueue();
+				ProcessQueue pq = new ProcessQueue();// 一个消息队列对应一个处理队列
 				long nextOffset = this.computePullFromWhere(mq);
 				if (nextOffset >= 0) {
 					ProcessQueue pre = this.processQueueTable.putIfAbsent(mq, pq);

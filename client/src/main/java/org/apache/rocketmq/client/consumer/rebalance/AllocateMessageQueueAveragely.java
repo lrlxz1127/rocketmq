@@ -56,7 +56,7 @@ public class AllocateMessageQueueAveragely implements AllocateMessageQueueStrate
         int index = cidAll.indexOf(currentCID);
         // 所有的队列和所有的客户端取余
         int mod = mqAll.size() % cidAll.size();
-        // 如果队列大小>客户端大小，平均值为1
+        // 如果队列大小<客户端大小，平均值为1
         int averageSize =
             mqAll.size() <= cidAll.size() ? 1 : (mod > 0 && index < mod ? mqAll.size() / cidAll.size()
                 + 1 : mqAll.size() / cidAll.size());

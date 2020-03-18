@@ -156,9 +156,9 @@ public abstract class NettyRemotingAbstract {
 		final RemotingCommand cmd = msg;
 		if (cmd != null) {
 			switch (cmd.getType()) {
-			case REQUEST_COMMAND:
+			case REQUEST_COMMAND:// 请求命令
 				processRequestCommand(ctx, cmd);
-				break;
+				break;// 响应命令
 			case RESPONSE_COMMAND:
 				processResponseCommand(ctx, cmd);
 				break;
@@ -578,19 +578,19 @@ public abstract class NettyRemotingAbstract {
 
 			while (!this.isStopped()) {
 				try {
-					NettyEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
+					NettyEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);// 从队列中阻塞获取事件
 					if (event != null && listener != null) {
 						switch (event.getType()) {
-						case IDLE:
+						case IDLE:// 超时事件
 							listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
 							break;
-						case CLOSE:
+						case CLOSE:// 关闭事件
 							listener.onChannelClose(event.getRemoteAddr(), event.getChannel());
 							break;
-						case CONNECT:
+						case CONNECT:// 连接事件
 							listener.onChannelConnect(event.getRemoteAddr(), event.getChannel());
 							break;
-						case EXCEPTION:
+						case EXCEPTION:// 异常事件
 							listener.onChannelException(event.getRemoteAddr(), event.getChannel());
 							break;
 						default:

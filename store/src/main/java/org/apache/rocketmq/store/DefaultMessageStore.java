@@ -526,6 +526,7 @@ public class DefaultMessageStore implements MessageStore {
 
 		GetMessageResult getResult = new GetMessageResult();
 
+		// 获取最大的消息
 		final long maxOffsetPy = this.commitLog.getMaxOffset();
 
 		ConsumeQueue consumeQueue = findConsumeQueue(topic, queueId);

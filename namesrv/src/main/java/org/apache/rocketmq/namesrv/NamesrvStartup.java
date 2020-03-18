@@ -43,136 +43,153 @@ import org.slf4j.LoggerFactory;
 
 public class NamesrvStartup {
 
-    private static InternalLogger log;
-    private static Properties properties = null;
-    private static CommandLine commandLine = null;
+	private static InternalLogger log;
+	private static Properties properties = null;
+	private static CommandLine commandLine = null;
 
-    public static void main(String[] args) {
-        main0(args);
-    }
+	/**
+	 * nameserver启动入口
+	 * 
+	 * @param args
+	 */
+	public static void main(String[] args) {
+		main0(args);
+	}
 
-    public static NamesrvController main0(String[] args) {
+	public static NamesrvController main0(String[] args) {
 
-        try {
-            NamesrvController controller = createNamesrvController(args);
-            start(controller);
-            String tip = "The Name Server boot success. serializeType=" + RemotingCommand.getSerializeTypeConfigInThisServer();
-            log.info(tip);
-            System.out.printf("%s%n", tip);
-            return controller;
-        } catch (Throwable e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
+		try {
+			// 创建控制器
+			NamesrvController controller = createNamesrvController(args);
+			// 启动控制器
+			start(controller);
+			String tip = "The Name Server boot success. serializeType="
+					+ RemotingCommand.getSerializeTypeConfigInThisServer();
+			log.info(tip);
+			System.out.printf("%s%n", tip);
+			return controller;
+		} catch (Throwable e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
-        System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
-        //PackageConflictDetect.detectFastjson();
+	public static NamesrvController createNamesrvController(String[] args) throws IOException, JoranException {
+		System.setProperty(RemotingCommand.REMOTING_VERSION_KEY, Integer.toString(MQVersion.CURRENT_VERSION));
 
-        Options options = ServerUtil.buildCommandlineOptions(new Options());
-        commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
-        if (null == commandLine) {
-            System.exit(-1);
-            return null;
-        }
+		// PackageConflictDetect.detectFastjson();
 
-        final NamesrvConfig namesrvConfig = new NamesrvConfig();
-        final NettyServerConfig nettyServerConfig = new NettyServerConfig();
-        nettyServerConfig.setListenPort(9876);
-        if (commandLine.hasOption('c')) {
-            String file = commandLine.getOptionValue('c');
-            if (file != null) {
-                InputStream in = new BufferedInputStream(new FileInputStream(file));
-                properties = new Properties();
-                properties.load(in);
-                MixAll.properties2Object(properties, namesrvConfig);
-                MixAll.properties2Object(properties, nettyServerConfig);
+		Options options = ServerUtil.buildCommandlineOptions(new Options());
+		commandLine = ServerUtil.parseCmdLine("mqnamesrv", args, buildCommandlineOptions(options), new PosixParser());
+		if (null == commandLine) {
+			System.exit(-1);
+			return null;
+		}
 
-                namesrvConfig.setConfigStorePath(file);
+		final NamesrvConfig namesrvConfig = new NamesrvConfig();// nameserver的配置
+		final NettyServerConfig nettyServerConfig = new NettyServerConfig();// netty服务端的相关配置
+		nettyServerConfig.setListenPort(9876);
+		if (commandLine.hasOption('c')) {// 从配置文件中读取配置
+			String file = commandLine.getOptionValue('c');
+			if (file != null) {
+				InputStream in = new BufferedInputStream(new FileInputStream(file));
+				properties = new Properties();
+				properties.load(in);
+				MixAll.properties2Object(properties, namesrvConfig);
+				MixAll.properties2Object(properties, nettyServerConfig);
 
-                System.out.printf("load config properties file OK, %s%n", file);
-                in.close();
-            }
-        }
+				namesrvConfig.setConfigStorePath(file);
 
-        if (commandLine.hasOption('p')) {
-            InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
-            MixAll.printObjectProperties(console, namesrvConfig);
-            MixAll.printObjectProperties(console, nettyServerConfig);
-            System.exit(0);
-        }
+				System.out.printf("load config properties file OK, %s%n", file);
+				in.close();
+			}
+		}
 
-        MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
+		if (commandLine.hasOption('p')) {// 打印配置信息
+			InternalLogger console = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_CONSOLE_NAME);
+			MixAll.printObjectProperties(console, namesrvConfig);
+			MixAll.printObjectProperties(console, nettyServerConfig);
+			System.exit(0);
+		}
 
-        if (null == namesrvConfig.getRocketmqHome()) {
-            System.out.printf("Please set the %s variable in your environment to match the location of the RocketMQ installation%n", MixAll.ROCKETMQ_HOME_ENV);
-            System.exit(-2);
-        }
+		// 将命令行中的配置设置到namesrvConfig对象中去
+		MixAll.properties2Object(ServerUtil.commandLine2Properties(commandLine), namesrvConfig);
 
-        LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
-        JoranConfigurator configurator = new JoranConfigurator();
-        configurator.setContext(lc);
-        lc.reset();
-        configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
+		if (null == namesrvConfig.getRocketmqHome()) {
+			System.out.printf(
+					"Please set the %s variable in your environment to match the location of the RocketMQ installation%n",
+					MixAll.ROCKETMQ_HOME_ENV);
+			System.exit(-2);
+		}
 
-        log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
+		// 初始发log
+		LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
+		JoranConfigurator configurator = new JoranConfigurator();
+		configurator.setContext(lc);
+		lc.reset();
+		configurator.doConfigure(namesrvConfig.getRocketmqHome() + "/conf/logback_namesrv.xml");
 
-        MixAll.printObjectProperties(log, namesrvConfig);
-        MixAll.printObjectProperties(log, nettyServerConfig);
+		log = InternalLoggerFactory.getLogger(LoggerName.NAMESRV_LOGGER_NAME);
 
-        final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
+		MixAll.printObjectProperties(log, namesrvConfig);
+		MixAll.printObjectProperties(log, nettyServerConfig);
 
-        // remember all configs to prevent discard
-        controller.getConfiguration().registerConfig(properties);
+		// 创建namesrv控制器
+		final NamesrvController controller = new NamesrvController(namesrvConfig, nettyServerConfig);
 
-        return controller;
-    }
+		// remember all configs to prevent discard
+		/// 合并配置
+		controller.getConfiguration().registerConfig(properties);
 
-    public static NamesrvController start(final NamesrvController controller) throws Exception {
+		return controller;
+	}
 
-        if (null == controller) {
-            throw new IllegalArgumentException("NamesrvController is null");
-        }
+	public static NamesrvController start(final NamesrvController controller) throws Exception {
 
-        boolean initResult = controller.initialize();
-        if (!initResult) {
-            controller.shutdown();
-            System.exit(-3);
-        }
+		if (null == controller) {
+			throw new IllegalArgumentException("NamesrvController is null");
+		}
 
-        Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                controller.shutdown();
-                return null;
-            }
-        }));
+		// 初始化
+		boolean initResult = controller.initialize();
+		if (!initResult) {
+			controller.shutdown();
+			System.exit(-3);
+		}
 
-        controller.start();
+		Runtime.getRuntime().addShutdownHook(new ShutdownHookThread(log, new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				controller.shutdown();
+				return null;
+			}
+		}));
 
-        return controller;
-    }
+		// 开启控制器
+		controller.start();
 
-    public static void shutdown(final NamesrvController controller) {
-        controller.shutdown();
-    }
+		return controller;
+	}
 
-    public static Options buildCommandlineOptions(final Options options) {
-        Option opt = new Option("c", "configFile", true, "Name server config properties file");
-        opt.setRequired(false);
-        options.addOption(opt);
+	public static void shutdown(final NamesrvController controller) {
+		controller.shutdown();
+	}
 
-        opt = new Option("p", "printConfigItem", false, "Print all config item");
-        opt.setRequired(false);
-        options.addOption(opt);
+	public static Options buildCommandlineOptions(final Options options) {
+		Option opt = new Option("c", "configFile", true, "Name server config properties file");
+		opt.setRequired(false);
+		options.addOption(opt);
 
-        return options;
-    }
+		opt = new Option("p", "printConfigItem", false, "Print all config item");
+		opt.setRequired(false);
+		options.addOption(opt);
 
-    public static Properties getProperties() {
-        return properties;
-    }
+		return options;
+	}
+
+	public static Properties getProperties() {
+		return properties;
+	}
 }
